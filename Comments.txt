@@ -1,0 +1,29 @@
+-- Comments to the implementation details. --
+
+The application is in C but compiled with C++ to avoid some troubles with VS compiler. 
+I could use C++11 std::thread et al but I'm more familiar with old pthread library.
+
+To start the application in Windows just type it's name and, optionally, the consumer delay 
+(1..200 ms, the default is 15). The producer produces 1 frame each 20 ms.
+ You need to have pthreadVC2.dll in the same binary directory (or in the path).
+
+ It also can be compiled and run in Linux with "g++ -pthread main.cpp".
+
+1. I assume that it's necessary to copy frame data supplied by the producer to some intermediate buffer 
+to be supplied to the consumer (otherwise we would simply pass the pointer and don't bore with repeated frames handling).
+The consumer is supposed to keep the contents of the supplied buffer intact so we can reuse it.
+
+2. All frames supposed to have the same size so I can allocate buffers once and then reuse them. I consider that malloc 
+never fails (it's true for any modern system with virtual memory management).
+
+3. To simulate repeated frames handling, I simply pass the same (repeated) data pointer to the consumer. In real word, 
+it may be different like passing a flag to just increment the time mark (for encoder) or keep displaying previous frame 
+(for decoder / display).
+
+4. The strategy to adjust producer / consumer rates may vary, I implemented the simplest one dropping produced frame
+when the queue grows above the half size. In real word, other possibilities may exist, like varying capture interval.
+In one of my applications, I passed average consumer delay time to the producer, to adjust capture rate.
+Dropping older frames instead of the new ones can also be considered, however it will require to add extra mutex lock 
+protection. 
+
+
